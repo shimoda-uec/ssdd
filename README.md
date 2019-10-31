@@ -1,7 +1,7 @@
 # SSDD:Self-Supervised Difference Detection
-By Watal Shimoda, Keiji Yanai.
+By Watal Shimoda and Keiji Yanai.
 ## Description
-This repository contains the codes for "Self-supervised difference detection for weakly supervised segmentation".
+This repository contains the codes for "Self-supervised difference detection for weakly supervised segmentation".  
 It has been published at ICCV2019.
 
 ## Requirements
