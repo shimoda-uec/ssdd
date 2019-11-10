@@ -14,7 +14,8 @@ from PIL import Image
 import torch.nn.functional as F
 import os.path
 import cv2
-voc12_root=os.environ['voc_root']
+#voc12_root=os.environ['voc_root']
+voc12_root="../voc_root"
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()

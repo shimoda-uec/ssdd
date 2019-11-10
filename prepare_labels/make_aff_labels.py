@@ -15,7 +15,8 @@ from tool import imutils, pyutils
 import time
 from PIL import Image
 import os
-voc12_root=os.environ['voc_root']
+#voc12_root=os.environ['voc_root']
+voc12_root="../voc_root"
 
 
 def get_palette(num_cls):
