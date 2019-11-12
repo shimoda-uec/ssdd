@@ -11,10 +11,10 @@ considering the labels as Knowledge and its CRF results as Advice.
 We denote this approach as static SSDD module.  
 Furthermore, we develop the labels obtained in the previous step using two SSDD modules,
 and we train a segmentation model with the modules in an end-to-end manner.  
-We denote this approach as dynamic SSDD module.
-This dynamic SSDD module is inspired by an iterative training approach proposed by Wei et al. : [arxiv](https://arxiv.org/abs/1509.03150)
+We denote this approach as dynamic SSDD module.  
+In this dynamic module, we intended to adapt the proposed method to an iterative training approach proposed by Wei et al. : [arxiv](https://arxiv.org/abs/1509.03150).
 
-<img src="https://github.com/shimoda-uec/ssdd/figure/ssdd_module.png">
+<img src="https://github.com/shimoda-uec/ssdd/blob/master/figure/ssdd_module.png">
 
 We provide the progress of training and inference in validation re-produced with this repository.  
 The progress of training dynamic ssdd module: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/script/dssdd.html).  
@@ -25,7 +25,7 @@ The inference in validation: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg
 Pytorch, [pydensecrf](https://github.com/lucasb-eyer/pydensecrf)
 
 ## Advance preparation
-We assume that the root directory of Pascal VOC is located in the same directory with this name: "voc_root".
+We assume that the root directory of Pascal VOC is located in the same directory with this name: "voc_root".  
 So set a symblic link for the root directory.
 ```
 ln -s "your_voc_root" voc_root
@@ -58,7 +58,7 @@ python main_ssdd.py --mode=3
 ## License and Citation
 Please cite our paper if it helps your research:
 ```
-@inproceedings{shimodaICCV19  
+@inproceedings{shimodaICCV19,
   Author = {Wataru Shimoda and Keiji Yanai},
   Title = {Self-Supervised Difference Detection for Weakly-Supervised Segmentation},  
   Booktitle = {Proceedings of the IEEE International Conference on Computer Vision},
