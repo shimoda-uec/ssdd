@@ -1,5 +1,7 @@
 # SSDD:Self-Supervised Difference Detection
-By Watal Shimoda and Keiji Yanai.
+By Watal Shimoda and Keiji Yanai.  
+[paper](https://arxiv.org/abs/1911.01370)
+
 ## Description
 This repository contains the codes for "Self-Supervised Difference Detection for Weakly Supervised Segmentation".  
 It has been published at ICCV2019.  
@@ -12,14 +14,15 @@ We denote this approach as static SSDD module.
 Furthermore, we develop the labels obtained in the previous step using two SSDD modules,
 and we train a segmentation model with the modules in an end-to-end manner.  
 We denote this approach as dynamic SSDD module.  
-In this dynamic module, we intended to adapt the proposed method to an iterative training approach proposed by Wei et al. : [arxiv](https://arxiv.org/abs/1509.03150).
+In this dynamic module, we intend to adapt the proposed method to an iterative training approach proposed by Wei et al. : [arxiv](https://arxiv.org/abs/1509.03150).
 
 <img src="https://github.com/shimoda-uec/ssdd/blob/master/figure/ssdd_module.png">
 
+## Visualization
 We provide the progress of training and inference in validation re-produced with this repository.  
 The progress of training dynamic ssdd module: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/script/dssdd.html).  
 The inference in validation: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/script/val.html).  
-(65.4pt in validation)
+(65.4 in validation)
 
 ## Requirements
 Pytorch, [pydensecrf](https://github.com/lucasb-eyer/pydensecrf)
