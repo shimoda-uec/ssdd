@@ -9,7 +9,8 @@ import train_dssdd
 import train_sssdd 
 import precompute_sssdd 
 ROOT_DIR = os.getcwd()
-VOC_ROOT = os.environ['voc_root']
+#VOC_ROOT = os.environ['voc_root']
+VOC_ROOT = 'voc_root'
 DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
 class Config():
@@ -66,7 +67,7 @@ if __name__ == '__main__':
                         help='mode',
                         type=int)
     parser.add_argument('--bn', required=False,
-                        default=1,
+                        default=2,
                         metavar="<batchsize>",
                         type=int)
     parser.add_argument('--modelid', required=False,
@@ -85,10 +86,11 @@ if __name__ == '__main__':
     config = Config()
     config.VOC_ROOT=VOC_ROOT
     runner_name = os.path.basename(__file__).split(".")[0]
-    dataset_train=PascalDataset()
-    dataset_train.load()
     if args.mode==0:
             print("Train the ssdd module for the difference between PSA and PSA with CRF")
+            dataset_train=PascalDataset()
+            dataset_train.load()
+            weight_file='pretrained_models/res38_cls.pth'
             models=create_model(config, train_sssdd, 'models', weight_file)
             model_trainer=train_sssdd.Trainer(config=config, model_dir=DEFAULT_LOGS_DIR, model=models)
             model_trainer.config.BATCH=torch.cuda.device_count()*args.bn
@@ -102,13 +104,13 @@ if __name__ == '__main__':
             print("Precompute the prediction of the difference between PSA and PSA with CRF")
             dataset_train=PascalDataset()
             dataset_train.load()
-            weight_file_seg='./models/sssdd_default/seg_0010.pth'
-            weight_file_ssdd='./models/sssdd_default/ssdd_0010.pth'
+            weight_file_seg='./logs/sssdd_default/models/seg_0010.pth'
+            weight_file_ssdd='./logs/sssdd_default/models/ssdd_0010.pth'
             models=create_model(config, precompute_sssdd, 'models')
             model_precompute=precompute_sssdd.Precompute(config=config, model_dir=DEFAULT_LOGS_DIR, model=models, weight_files=(weight_file_seg, weight_file_ssdd))
             model_precompute.config.BATCH=torch.cuda.device_count()*args.bn
             model_precompute.config.modelid=args.modelid
-            model_precompute.set_log_dir('sssdd', args.modelid)
+            model_precompute.set_log_dir('precompute', args.modelid)
             model_precompute.precompute_model(
                         dataset_train,
                         )
@@ -116,7 +118,7 @@ if __name__ == '__main__':
             print("Train the two ssdd modules and the segmentation model")
             dataset_train=PascalDataset()
             dataset_train.load()
-            weight_file=''
+            weight_file='pretrained_models/res38_cls.pth'
             models=create_model(config, train_dssdd, 'models', weight_file)
             config.BATCH=torch.cuda.device_count()*args.bn
             config.EPOCHS=41
@@ -130,15 +132,16 @@ if __name__ == '__main__':
             print("Validation")
             dataset_val=PascalDataset()
             dataset_val.load_val()
-            weight_file='./segmodel_64pt9_val.pth'
+            #weight_file='./segmodel_64pt9_val.pth'
+            weight_file='./logs/dssdd_default/models/seg_0028.pth'
             model=create_model(config, val, 'val')
             model=nn.DataParallel(model).cuda()
             state_dict = torch.load(weight_file)
             model.load_state_dict(state_dict,strict=False)
             model_evaluator=val.Evaluator(config=config, model=model)
             model_evaluator.config.BATCH=torch.cuda.device_count()*args.bn
-            model_evaluator.config.saveid=args.saveid
-            model_evaluator.set_log_dir('val', args.saveid)
+            model_evaluator.config.modelid=args.modelid
+            model_evaluator.set_log_dir('val', args.modelid)
             model_evaluator.eval_model(
                         dataset_val,
                         )
