@@ -29,6 +29,7 @@ cv2.setNumThreads(0)
 class SssddData(PascalDataset):
     def __init__(self, dataset, config):
         super().__init__(dataset, config)
+        self.label_dic = dataset.label_dic
         self.joint_transform_list=[
                                 None,
                                 imutils.RandomHorizontalFlip(),
@@ -203,7 +204,6 @@ class Trainer():
         if (self.step%30==0):
             sid='_'+self.phase+'_'+self.saveid+'_'+str(self.epoch)+'_'+str(self.cnt)
             img_org=img_org.data.cpu().numpy()[...,::-1]
-            savedir= '/export/space0/shimoda-k/wseg/ssdd/'
             saven = self.log_dir_img + '/i'+sid+'.jpg'
             cv2.imwrite(saven,img_org[0])
             saven = self.log_dir_img + '/D'+sid+'.png'
@@ -216,10 +216,9 @@ class Trainer():
             saven = self.log_dir_img + 'da'+sid+'.png'
             tmp=F.sigmoid(dd00)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            saven = self.log_dir_img + 'db'+sid+'.png'
+            saven = self.log_dir_img + 'dk'+sid+'.png'
             tmp=F.sigmoid(dd01)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            print(self.sid)
             self.cnt += 1
         return loss_seg, loss_dd
 

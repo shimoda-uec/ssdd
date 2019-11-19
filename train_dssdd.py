@@ -40,22 +40,22 @@ class DssddData(PascalDataset):
     def __getitem__(self, image_index):
         image_id = self.image_ids[image_index]
         # Load image and mask
-        impath=''
-        imn=impath+image_id+'.jpg'
+        impath = self.config.VOC_ROOT+'/JPEGImages/'
+        imn = impath+image_id+'.jpg'
         img = Image.open(imn).convert("RGB")
         gt_class_mlabel = torch.from_numpy(self.label_dic[image_id])
         gt_class_mlabel_bg = torch.from_numpy(np.concatenate(([1],self.label_dic[image_id])))
-        psan = 'out_aff/'+image_id+'_psa.npy'
-        psa=np.load(psan).transpose(1,2,0)
-        psan = 'out_aff/'+image_id+'_psa_crf.npy'
+        psan = 'prepare_labels/results/out_aff/'+image_id+'.npy'
+        psa=np.array(list(np.load(psan).item().values())).transpose(1,2,0)
+        psan = 'prepare_labels/results/out_aff_crf/'+image_id+'.npy'
         psa_crf=np.load(psan).transpose(1,2,0)
         h=psa.shape[0]
         w=psa.shape[1]
-        saven = 'dd/dd0_'+str(image_index)+'.npz'
-        dd0=np.load(saven)['arr_0'].transpose(1,2,0)
+        saven = 'precompute/'+self.config.modelid+'/da_precompute_'+self.config.modelid+'_'+str(image_index)+'.npy'
+        dd0=np.load(saven).transpose(1,2,0)
         dd0=np.reshape(cv2.resize(dd0,(w,h)),(h,w,1))
-        saven = 'dd/dd1_'+str(image_index)+'.npz'
-        dd1=np.load(saven)['arr_0'].transpose(1,2,0)
+        saven = 'precompute/'+self.config.modelid+'/dk_precompute_'+self.config.modelid+'_'+str(image_index)+'.npy'
+        dd1=np.load(saven).transpose(1,2,0)
         dd1=np.reshape(cv2.resize(dd1,(w,h)),(h,w,1))
         img_norm, img_org, psa, psa_crf, dp0, dp1 = self.img_label_resize([img, np.array(img), psa, psa_crf, dd0, dd1])
         img_org = cv2.resize(img_org,self.config.OUT_SHAPE)
@@ -154,7 +154,7 @@ class Trainer():
         lr=1e-3
         self.seg_model=nn.DataParallel(seg_model)
         self.ssdd_model=nn.DataParallel(ssdd_model)
-    def train_model(self, train_dataset, layers):
+    def train_model(self, train_dataset):
         epochs=self.config.EPOCHS
         # Data generators
         self.train_set = DssddData(train_dataset, self.config)
@@ -234,21 +234,59 @@ class Trainer():
         loss_dd10 = ssddF.compute_sig_mask_loss(dd10, seed_mask != seg_mask_sub)
         loss_dd11 = ssddF.compute_sig_mask_loss(dd11, refine_mask1 != seg_mask_sub)
         loss_dd = (loss_dd00 + loss_dd01 + loss_dd10 + loss_dd11)/4
+        if (self.step%30==0):
+            sid='_'+self.phase+'_'+'tmp'+'_'+str(self.epoch)+'_'+str(self.cnt)
+            img_org=img_org.data.cpu().numpy()[...,::-1]
+            saven = self.log_dir_img + '/i'+sid+'.jpg'
+            cv2.imwrite(saven,img_org[0])
+            saven = self.log_dir_img + '/D1'+sid+'.png'
+            mask_png = utils.mask2png(saven, refine_mask0[0].squeeze().data.cpu().numpy())
+            saven = self.log_dir_img + '/K1'+sid+'.png'
+            mask_png = utils.mask2png(saven, seg_mask_main[0].data.cpu().numpy().astype(np.float32))
+            saven = self.log_dir_img + '/A1'+sid+'.png'
+            mask_png = utils.mask2png(saven, seg_crf_mask[0].squeeze().data.cpu().numpy())
+
+            saven = self.log_dir_img + 'da1'+sid+'.png'
+            tmp=F.sigmoid(dd00)[0].squeeze().data.cpu().numpy()
+            cv2.imwrite(saven,tmp*255)
+            saven = self.log_dir_img + 'dk1'+sid+'.png'
+            tmp=F.sigmoid(dd01)[0].squeeze().data.cpu().numpy()
+            cv2.imwrite(saven,tmp*255)
+
+            saven = self.log_dir_img + '/D2'+sid+'.png'
+            mask_png = utils.mask2png(saven, refine_mask1[0].squeeze().data.cpu().numpy())
+            saven = self.log_dir_img + '/K2'+sid+'.png'
+            mask_png = utils.mask2png(saven, seg_mask_main[0].data.cpu().numpy().astype(np.float32))
+            #saven = self.log_dir_img + '/A2'+sid+'.png'
+            #mask_png = utils.mask2png(saven, refine_mask[0].squeeze().data.cpu().numpy())
+
+            saven = self.log_dir_img + 'da2'+sid+'.png'
+            tmp=F.sigmoid(dd10)[0].squeeze().data.cpu().numpy()
+            cv2.imwrite(saven,tmp*255)
+            saven = self.log_dir_img + 'dk2'+sid+'.png'
+            tmp=F.sigmoid(dd11)[0].squeeze().data.cpu().numpy()
+            cv2.imwrite(saven,tmp*255)
+            self.cnt += 1
+        
         return loss_seg, loss_dd
 
-    def set_log_dir(self, runner_name, phase, saveid, model_path=None):
-            # Set date and epoch counter as if starting a new model
-            self.epoch = 0
-            self.phase = phase
-            self.saveid = saveid
-            self.log_dir = os.path.join(self.model_dir, "{}_{}_{}".format(runner_name, phase, saveid))
-            if not os.path.exists(self.log_dir):
-                os.makedirs(self.log_dir)
-            # Path to save after each epoch. Include placeholders that get filled by Keras.
-            self.checkpoint_path_seg = os.path.join(self.log_dir, "seg_*epoch*.pth".format())
-            self.checkpoint_path_seg = self.checkpoint_path_seg.replace("*epoch*", "{:04d}")
-            self.checkpoint_path_ssdd = os.path.join(self.log_dir, "ssdd_*epoch*.pth".format())
-            self.checkpoint_path_ssdd = self.checkpoint_path_ssdd.replace("*epoch*", "{:04d}")
+    def set_log_dir(self, phase, saveid, model_path=None):
+        # Set date and epoch counter as if starting a new model
+        self.epoch = 0
+        self.phase = phase
+        self.saveid = saveid
+        self.log_dir = os.path.join(self.model_dir, "{}_{}".format(phase, saveid))
+        self.log_dir_model = self.log_dir +'/'+ 'models'
+        if not os.path.exists(self.log_dir_model):
+            os.makedirs(self.log_dir_model)
+        self.log_dir_img = self.log_dir +'/'+ 'imgs'
+        if not os.path.exists(self.log_dir_img):
+            os.makedirs(self.log_dir_img)
+        # Path to save after each epoch. Include placeholders that get filled by Keras.
+        self.checkpoint_path_seg = os.path.join(self.log_dir_model, "seg_*epoch*.pth".format())
+        self.checkpoint_path_seg = self.checkpoint_path_seg.replace("*epoch*", "{:04d}")
+        self.checkpoint_path_ssdd = os.path.join(self.log_dir_model, "ssdd_*epoch*.pth".format())
+        self.checkpoint_path_ssdd = self.checkpoint_path_ssdd.replace("*epoch*", "{:04d}")
 
 def models(config, weight_file=None):
     seg_model = SegModel(config=config)
