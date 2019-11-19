@@ -53,7 +53,7 @@ class PascalDataset():
 
 
 ############################################################
-#  Training
+#  main
 ############################################################
 
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
             dataset_val=PascalDataset()
             dataset_val.load_val()
             #weight_file='./segmodel_64pt9_val.pth'
-            weight_file='./logs/dssdd_default/models/seg_0028.pth'
+            weight_file='./logs/dssdd_default/models/seg_0030.pth'
             model=create_model(config, val, 'val')
             model=nn.DataParallel(model).cuda()
             state_dict = torch.load(weight_file)

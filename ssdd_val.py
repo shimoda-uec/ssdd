@@ -60,12 +60,12 @@ class SegModel(SegBaseModel):
     def __init__(self, config):
         super(SegModel, self).__init__(config)
         in_channel=4096
-        self.seg = SegmentationPsa(config, in_channel=in_channel, middle_channel=512, num_classes=21)
+        self.seg_main = SegmentationPsa(config, in_channel=in_channel, middle_channel=512, num_classes=21)
 
     def forward(self, inputs):
         x = inputs
         [x1, x2, x3, x4, x5] = self.encoder(x)
-        seg, seg_head = self.seg(x5)
+        seg, seg_head = self.seg_main(x5)
         return seg
 
 class Evaluator():
@@ -131,17 +131,21 @@ class Evaluator():
                     seg_crf_mask = np.argmax(seg_crf_map,axis=0)
                     # save results
                     cnt+=1
-                    #sid='_'+self.phase+'_'+self.saveid+'_'+str(cnt)
-                    #saven = os.path.join(self.savedir, 'i'+str(cnt)+'.jpg')
-                    #cv2.imwrite(saven,img_org[:,:,::-1])
-                    saven = os.path.join(self.savedir, 's'+str(cnt)+'.png')
+                    saven = os.path.join(self.savedir, 'seg_val_'+self.saveid+'_'+str(cnt)+'.png')
                     utils.mask2png(saven, seg_mask)
-                    saven = os.path.join(self.savedir, 'c'+str(cnt)+'.png')
+                    saven = os.path.join(self.savedir, 'seg_val_'+self.saveid+'_'+str(cnt)+'.txt')
+                    np.savetxt(saven, seg_mask)
+                    saven = os.path.join(self.savedir, 'seg_val_crf_'+self.saveid+'_'+str(cnt)+'.png')
                     utils.mask2png(saven, seg_crf_mask)
-    def set_log_dir(self, runner_name, phase, saveid, model_path=None):
+                    saven = os.path.join(self.savedir, 'seg_val_crf_'+self.saveid+'_'+str(cnt)+'.txt')
+                    np.savetxt(saven, seg_crf_mask)
+
+
+
+    def set_log_dir(self, phase, saveid, model_path=None):
             self.phase = phase
             self.saveid = saveid
-            self.savedir = 'res/'+self.phase+'_'+self.saveid
+            self.savedir = 'validation/'+self.saveid
             print("save the results to "+self.savedir)
             if not os.path.exists(self.savedir):
                 os.makedirs(self.savedir)

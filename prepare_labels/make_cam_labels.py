@@ -28,7 +28,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     model = getattr(importlib.import_module(args.network), 'Net')()
-    model.load_state_dict(torch.load("res38_cls.pth"))
+    model.load_state_dict(torch.load("../pretrained_models/res38_cls.pth"))
 
     model.eval()
     model.cuda()

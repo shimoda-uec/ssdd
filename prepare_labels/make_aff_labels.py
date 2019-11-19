@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     model = getattr(importlib.import_module("network.resnet38_aff"), 'Net')()
 
-    model.load_state_dict(torch.load("res38_aff.pth"))
+    model.load_state_dict(torch.load("../pretrained_models/res38_aff.pth"))
 
     model.eval()
     model.cuda()

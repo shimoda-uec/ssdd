@@ -163,7 +163,6 @@ class Precompute():
             saven = self.savedir + '/da'+sid+'.png'
             tmp=F.sigmoid(dd01)[i].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            savedir= '/export/space0/shimoda-k/wseg/ssdd/precompute/'
             saven = self.savedir +'/dk'+sid
             np.save(saven,dd00[i].data.cpu().numpy())
             saven = self.savedir +'/da'+sid

@@ -39,7 +39,6 @@ class DssddData(PascalDataset):
                      ]
     def __getitem__(self, image_index):
         image_id = self.image_ids[image_index]
-        # Load image and mask
         impath = self.config.VOC_ROOT+'/JPEGImages/'
         imn = impath+image_id+'.jpg'
         img = Image.open(imn).convert("RGB")
@@ -168,8 +167,8 @@ class Trainer():
             self.train_epoch(train_generator, epoch)
             # Save model
             if (epoch % 2 ==0) & (epoch>0):
-                torch.save(self.model_seg.state_dict(), self.checkpoint_path_seg.format(epoch))
-                torch.save(self.model_ssdd.state_dict(), self.checkpoint_path_ssdd.format(epoch))
+                torch.save(self.seg_model.state_dict(), self.checkpoint_path_seg.format(epoch))
+                torch.save(self.ssdd_model.state_dict(), self.checkpoint_path_ssdd.format(epoch))
             torch.cuda.empty_cache()
     def train_epoch(self, datagenerator, epoch):
         learning_rate=self.config.LEARNING_RATE
@@ -212,9 +211,9 @@ class Trainer():
         forward_time=time.time()
         if (self.step%10==0):
             prefix="{}/{}/{}/{}".format(self.epoch, self.cnt, self.step + 1, self.steps)
-            suffix="forward_time: {:.3f} time: {:.3f} data {:.3f} seg: {:.3f}".format(
-                forward_time-start, (time.time()-start),(start-end),loss_seg.item())
-            print('\r%s %s' % (prefix, suffix), end = '\n')
+            suffix="forward_time: {:.3f} data {:.3f} loss: {:.3f}".format(
+                forward_time-start, (start-end),loss_seg.item())
+            print('%s %s' % (prefix, suffix), end = '\n')
 
     def compute_loss(self, seg_outs, dd_outs, inputs):
         seg_outs_main, seg_outs_sub, seg_crf_mask, feats = seg_outs
@@ -246,10 +245,10 @@ class Trainer():
             saven = self.log_dir_img + '/A1'+sid+'.png'
             mask_png = utils.mask2png(saven, seg_crf_mask[0].squeeze().data.cpu().numpy())
 
-            saven = self.log_dir_img + 'da1'+sid+'.png'
+            saven = self.log_dir_img + '/da1'+sid+'.png'
             tmp=F.sigmoid(dd00)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            saven = self.log_dir_img + 'dk1'+sid+'.png'
+            saven = self.log_dir_img + '/dk1'+sid+'.png'
             tmp=F.sigmoid(dd01)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
 
@@ -260,18 +259,18 @@ class Trainer():
             #saven = self.log_dir_img + '/A2'+sid+'.png'
             #mask_png = utils.mask2png(saven, refine_mask[0].squeeze().data.cpu().numpy())
 
-            saven = self.log_dir_img + 'da2'+sid+'.png'
+            saven = self.log_dir_img + '/da2'+sid+'.png'
             tmp=F.sigmoid(dd10)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            saven = self.log_dir_img + 'dk2'+sid+'.png'
+            saven = self.log_dir_img + '/dk2'+sid+'.png'
             tmp=F.sigmoid(dd11)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
+            print(saven)
             self.cnt += 1
         
         return loss_seg, loss_dd
 
     def set_log_dir(self, phase, saveid, model_path=None):
-        # Set date and epoch counter as if starting a new model
         self.epoch = 0
         self.phase = phase
         self.saveid = saveid
@@ -282,7 +281,6 @@ class Trainer():
         self.log_dir_img = self.log_dir +'/'+ 'imgs'
         if not os.path.exists(self.log_dir_img):
             os.makedirs(self.log_dir_img)
-        # Path to save after each epoch. Include placeholders that get filled by Keras.
         self.checkpoint_path_seg = os.path.join(self.log_dir_model, "seg_*epoch*.pth".format())
         self.checkpoint_path_seg = self.checkpoint_path_seg.replace("*epoch*", "{:04d}")
         self.checkpoint_path_ssdd = os.path.join(self.log_dir_model, "ssdd_*epoch*.pth".format())
