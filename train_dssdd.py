@@ -235,7 +235,7 @@ class Trainer():
         loss_dd11 = ssddF.compute_sig_mask_loss(dd11, refine_mask1 != seg_mask_sub)
         loss_dd = (loss_dd00 + loss_dd01 + loss_dd10 + loss_dd11)/4
         if (self.step%30==0):
-            sid='_'+self.phase+'_'+'tmp'+'_'+str(self.epoch)+'_'+str(self.cnt)
+            sid='_'+self.phase+'_'+self.saveid+'_'+str(self.epoch)+'_'+str(self.cnt)
             img_org=img_org.data.cpu().numpy()[...,::-1]
             saven = self.log_dir_img + '/i'+sid+'.jpg'
             cv2.imwrite(saven,img_org[0])
