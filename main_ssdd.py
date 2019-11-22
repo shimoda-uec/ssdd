@@ -106,6 +106,8 @@ if __name__ == '__main__':
             dataset_train.load()
             weight_file_seg='./logs/sssdd_default/models/seg_0010.pth'
             weight_file_ssdd='./logs/sssdd_default/models/ssdd_0010.pth'
+            #weight_file_seg='sssdd_seg.pth'
+            #weight_file_ssdd='sssdd_ssdd.pth'
             models=create_model(config, precompute_sssdd, 'models')
             model_precompute=precompute_sssdd.Precompute(config=config, model_dir=DEFAULT_LOGS_DIR, model=models, weight_files=(weight_file_seg, weight_file_ssdd))
             model_precompute.config.BATCH=torch.cuda.device_count()*args.bn
@@ -133,7 +135,8 @@ if __name__ == '__main__':
             dataset_val=PascalDataset()
             dataset_val.load_val()
             #weight_file='./segmodel_64pt9_val.pth'
-            weight_file='./logs/dssdd_default/models/seg_0030.pth'
+            #weight_file='./logs/dssdd_default/models/seg_0030.pth'
+            weight_file='dssdd_seg.pth'
             model=create_model(config, val, 'val')
             model=nn.DataParallel(model).cuda()
             state_dict = torch.load(weight_file)

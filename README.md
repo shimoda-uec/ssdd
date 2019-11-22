@@ -35,7 +35,7 @@ So set a symblic link for the root directory.
 ln -s "your_voc_root" voc_root
 ```
 
-To train both of static ssdd module and dynamic ssdd module, seed labels are required.
+To train both of static ssdd module and dynamic ssdd module, seed labels are required.  
 Please check this directory: [preparing_labels](https://github.com/shimoda-uec/ssdd/tree/master/prepare_labels).  
 
 ## Usage
