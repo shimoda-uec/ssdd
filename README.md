@@ -19,13 +19,14 @@ In this dynamic module, we intend to adapt the proposed method to an iterative t
 <img src="https://github.com/shimoda-uec/ssdd/blob/master/figure/ssdd_module.png">
 
 ## Visualization
-We provide the progress of training and inference in validation re-produced with this repository.  
-The progress of training dynamic ssdd module: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/script/dssdd.html).  
-The inference in validation: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/script/val.html).  
-(65.4 in validation)
+We provide the progress of training and inference on the validation set re-produced with this repository.  
+The progress of training for dynamic ssdd module: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/script/dssdd.html).  
+The inference on the validation: [html](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/script/val.html).  
+(65.4 in validation. There is only difference in the option of interpolation between this repository and conference version.)  
+We also provide trained models, pre-computed results and evaluation results: [run.zip](http://mm.cs.uec.ac.jp/shimoda-k/space0/wseg/ssdd/git/ssdd/run.zip).
 
 ## Requirements
-Pytorch, [pydensecrf](https://github.com/lucasb-eyer/pydensecrf)
+Python 3.5 , Pytorch >= 0.4.1, [Pydensecrf](https://github.com/lucasb-eyer/pydensecrf)
 
 ## Advance preparation
 We assume that the root directory of Pascal VOC is located in the same directory with this name: "voc_root".  
@@ -34,8 +35,8 @@ So set a symblic link for the root directory.
 ln -s "your_voc_root" voc_root
 ```
 
-Seed labels are required for training.  
-Please check the directory: [preparing_labels](https://github.com/shimoda-uec/ssdd/tree/master/prepare_labels).  
+To train both of static ssdd module and dynamic ssdd module, seed labels are required.
+Please check this directory: [preparing_labels](https://github.com/shimoda-uec/ssdd/tree/master/prepare_labels).  
 
 ## Usage
 First, train static SSDD module by following codes. (around half day)  
