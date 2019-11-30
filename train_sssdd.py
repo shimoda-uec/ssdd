@@ -50,6 +50,7 @@ class SssddData(PascalDataset):
         psa_crf=np.load(psan).transpose(1,2,0)
         h=psa.shape[0]
         w=psa.shape[1]
+        # resize inputs
         img_norm, img_org, psa, psa_crf = self.img_label_resize([img, np.array(img), psa, psa_crf])
         img_org = cv2.resize(img_org,self.config.OUT_SHAPE)
         psa = cv2.resize(psa,self.config.OUT_SHAPE)
@@ -156,6 +157,7 @@ class Trainer():
             self.step += 1
     def train_step(self, inputs, end):
         start = time.time()
+        # adjust learning rate
         lr=utils.adjust_learning_rate(self.config.LEARNING_RATE, self.epoch, self.config.LR_RAMPDOWN_EPOCHS, self.step, self.steps)
         self.optimizer = torch.optim.SGD([
             {'params': self.param_lr_1x,'lr': lr*1, 'weight_decay': self.config.WEIGHT_DECAY},
@@ -164,15 +166,19 @@ class Trainer():
         self.optimizer_dd = torch.optim.SGD([
             {'params': self.param_dd,'lr': lr*10, 'weight_decay': self.config.WEIGHT_DECAY},
         ], lr=lr, momentum=self.config.LEARNING_MOMENTUM, weight_decay= self.config.WEIGHT_DECAY)
+        # input items
         img_norm, img_org, gt_class_mlabel, gt_class_mlabel_bg, psa_mask, psa_crf_mask = inputs
         img_norm = Variable(img_norm).cuda().float()
         img_org = Variable(img_org).cuda().float()
         gt_class_mlabel = Variable(gt_class_mlabel).cuda().float()
         gt_class_mlabel_bg = Variable(gt_class_mlabel_bg).cuda().float()
+        # forward
         seg_outs = self.seg_model((img_norm, img_org, gt_class_mlabel_bg))
         dd_outs = self.ssdd_model((seg_outs, psa_mask, psa_crf_mask, gt_class_mlabel))
+        # get loss
         loss_seg, loss_dd = self.compute_loss(seg_outs, dd_outs, inputs)
         forward_time=time.time()
+        # backward
         self.optimizer.zero_grad()
         loss_seg.backward()
         self.optimizer.step()
@@ -195,12 +201,16 @@ class Trainer():
         (dd00, dd01, ignore_flags0, refine_mask0) = dd_outs0
         psa_mask = Variable(psa_mask).cuda().long()
         psa_crf_mask = Variable(psa_crf_mask).cuda().long()
+        # compute losses
+        # segmentation loss
         loss_seg_main = F.cross_entropy(seg_main, psa_mask, ignore_index=255)
         loss_seg = loss_seg_main
+        # difference detection loss
         psa_diff = psa_mask != psa_crf_mask
         loss_dd00 = ssddF.get_ddloss(dd00, psa_diff, ignore_flags0)
         loss_dd01 = ssddF.get_ddloss(dd01, psa_diff, ignore_flags0)
         loss_dd = (loss_dd00 + loss_dd01)/2
+        # save temporary outputs
         if (self.step%30==0):
             sid='_'+self.phase+'_'+self.saveid+'_'+str(self.epoch)+'_'+str(self.cnt)
             img_org=img_org.data.cpu().numpy()[...,::-1]

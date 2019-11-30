@@ -56,6 +56,7 @@ class DssddData(PascalDataset):
         saven = 'precompute/'+self.config.modelid+'/dk_precompute_'+self.config.modelid+'_'+str(image_index)+'.npy'
         dd1=np.load(saven).transpose(1,2,0)
         dd1=np.reshape(cv2.resize(dd1,(w,h)),(h,w,1))
+        # resize inputs
         img_norm, img_org, psa, psa_crf, dp0, dp1 = self.img_label_resize([img, np.array(img), psa, psa_crf, dd0, dd1])
         img_org = cv2.resize(img_org,self.config.OUT_SHAPE)
         dd0 = cv2.resize(dd0,self.config.OUT_SHAPE)
@@ -71,6 +72,8 @@ class DssddData(PascalDataset):
         psa_mask = torch.from_numpy(psa_mask).unsqueeze(0)
         psa_crf_mask = torch.from_numpy(psa_crf_mask).unsqueeze(0)
         ignore_flags=torch.from_numpy(ssddF.get_ignore_flags(psa_mask, psa_crf_mask, [gt_class_mlabel])).float()
+        # integration using sssdd module
+        # the parameters are different from dssdd module
         (_, _, _, seed_mask) = ssddF.get_dd_mask(dd0, dd1, psa_mask, psa_crf_mask, ignore_flags, dd_bias=0.1, bg_bias=0.1)
         return img_norm, img_org, gt_class_mlabel, gt_class_mlabel_bg, seed_mask[0]
     def __len__(self):
@@ -183,6 +186,7 @@ class Trainer():
             self.step += 1
     def train_step(self, inputs, end):
         start = time.time()
+        # adjust learning rate
         lr=utils.adjust_learning_rate(self.config.LEARNING_RATE, self.epoch, self.config.LR_RAMPDOWN_EPOCHS, self.step, self.steps)
         self.optimizer = torch.optim.SGD([
             {'params': self.param_lr_1x,'lr': lr*1, 'weight_decay': self.config.WEIGHT_DECAY},
@@ -191,16 +195,20 @@ class Trainer():
         self.optimizer_dd = torch.optim.SGD([
             {'params': self.param_dd,'lr': lr*10, 'weight_decay': self.config.WEIGHT_DECAY},
         ], lr=lr, momentum=self.config.LEARNING_MOMENTUM, weight_decay= self.config.WEIGHT_DECAY)
+        # input items
         img_norm, img_org, gt_class_mlabels, gt_class_mlabels_bg, seed_mask = inputs
         img_norm = Variable(img_norm).cuda().float()
         img_org = Variable(img_org).cuda().float()
         seed_mask = Variable(seed_mask).cuda().long()
         gt_class_mlabels = Variable(gt_class_mlabels).cuda().float()
         gt_class_mlabels_bg = Variable(gt_class_mlabels_bg).cuda().float()
+        # forward
         seg_outs = self.seg_model((img_norm, img_org, gt_class_mlabels_bg))
         dd_outs = self.ssdd_model((seg_outs, seed_mask, gt_class_mlabels))
+        # get loss
         loss_seg, loss_dd = self.compute_loss(seg_outs, dd_outs, inputs)
         forward_time=time.time()
+        # backward
         self.optimizer.zero_grad()
         loss_seg.backward()
         self.optimizer.step()
@@ -224,15 +232,19 @@ class Trainer():
         seed_mask = Variable(seed_mask).cuda().long()
         (dd00, dd01, ignore_flags0, refine_mask0) = dd_outs0
         (dd10, dd11, ignore_flags1, refine_mask1) = dd_outs1
+        # compute losses
+        # segmentation loss
         loss_seg_main = F.cross_entropy(seg_main, refine_mask1, ignore_index=255)
         loss_seg_sub = 0.5*F.cross_entropy(seg_sub, seed_mask, ignore_index=255) + 0.5*F.cross_entropy(seg_sub, refine_mask1, ignore_index=255)
         loss_seg = loss_seg_main + loss_seg_sub
+        # difference detection loss
         seg_crf_diff = seg_mask_main != seg_crf_mask
         loss_dd00 = ssddF.get_ddloss(dd00, seg_crf_diff, ignore_flags0)
         loss_dd01 = ssddF.get_ddloss(dd01, seg_crf_diff, ignore_flags0)
         loss_dd10 = ssddF.compute_sig_mask_loss(dd10, seed_mask != seg_mask_sub)
         loss_dd11 = ssddF.compute_sig_mask_loss(dd11, refine_mask1 != seg_mask_sub)
         loss_dd = (loss_dd00 + loss_dd01 + loss_dd10 + loss_dd11)/4
+        # save temporary outputs
         if (self.step%30==0):
             sid='_'+self.phase+'_'+self.saveid+'_'+str(self.epoch)+'_'+str(self.cnt)
             img_org=img_org.data.cpu().numpy()[...,::-1]
@@ -265,9 +277,7 @@ class Trainer():
             saven = self.log_dir_img + '/dk2'+sid+'.png'
             tmp=F.sigmoid(dd11)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            print(saven)
-            self.cnt += 1
-        
+            self.cnt += 1        
         return loss_seg, loss_dd
 
     def set_log_dir(self, phase, saveid, model_path=None):
