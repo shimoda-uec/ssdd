@@ -257,24 +257,24 @@ class Trainer():
             saven = self.log_dir_img + '/A1'+sid+'.png'
             mask_png = utils.mask2png(saven, seg_crf_mask[0].squeeze().data.cpu().numpy())
 
-            saven = self.log_dir_img + '/da1'+sid+'.png'
+            saven = self.log_dir_img + '/dk1'+sid+'.png'
             tmp=F.sigmoid(dd00)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            saven = self.log_dir_img + '/dk1'+sid+'.png'
+            saven = self.log_dir_img + '/da1'+sid+'.png'
             tmp=F.sigmoid(dd01)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
 
             saven = self.log_dir_img + '/D2'+sid+'.png'
             mask_png = utils.mask2png(saven, refine_mask1[0].squeeze().data.cpu().numpy())
             saven = self.log_dir_img + '/K2'+sid+'.png'
-            mask_png = utils.mask2png(saven, seg_mask_main[0].data.cpu().numpy().astype(np.float32))
+            mask_png = utils.mask2png(saven, seed_mask[0].data.cpu().numpy().astype(np.float32))
             #saven = self.log_dir_img + '/A2'+sid+'.png'
             #mask_png = utils.mask2png(saven, refine_mask[0].squeeze().data.cpu().numpy())
 
-            saven = self.log_dir_img + '/da2'+sid+'.png'
+            saven = self.log_dir_img + '/dk2'+sid+'.png'
             tmp=F.sigmoid(dd10)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
-            saven = self.log_dir_img + '/dk2'+sid+'.png'
+            saven = self.log_dir_img + '/da2'+sid+'.png'
             tmp=F.sigmoid(dd11)[0].squeeze().data.cpu().numpy()
             cv2.imwrite(saven,tmp*255)
             self.cnt += 1        
